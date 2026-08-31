@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASTER - Scan Pointage</title>
+    <!-- Inclusion de la bibliothèque de scan de QR code -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f9; padding: 20px; }
+        #reader { width: 300px; margin: auto; }
+        #result { margin-top: 20px; font-size: 1.2em; font-weight: bold; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+
+    <h2>ASTER - Pointage Événement</h2>
+    <div id="reader"></div>
+    <div id="result">En attente de scan...</div>
+
+    <script>
+        // URL de ton application web Apps Script configurée
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbvAxrqWFMq-2q4tBWAslIgUTBEKvHfAXITS8-xMTRen-CRS0ljtusc81Vk_FATya/exec";
+
+        function onScanSuccess(decodedText, decodedResult) {
+            document.getElementById('result').innerHTML = "Scan détecté : " + decodedText + "<br>Envoi en cours...";
+            
+            // Envoi de l'ID scanné vers Google Sheets via Apps Script (doPost)
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ idMembre: decodedText })
+            })
+            .then(response => {
+                document.getElementById('result').innerHTML = "<span class='success'>Pointage enregistré pour : " + decodedText + "</span>";
+                setTimeout(() => { document.getElementById('result').innerHTML = "En attente de scan..."; }, 2000);
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = "<span class='error'>Erreur de transmission</span>";
+            });
+        }
+
+        var html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: 250 }, false);
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+</body>
+</html>
