@@ -1,20 +1,16 @@
 function envoyerScan(idMembre) {
-    const urlWebapp = "https://script.google.com/macros/s/AKfycbyuAxrqWFMq-2q4tBWAshIgUTBEKvHFaXlTS8-xMTRen-CRS0ljtuscFT81Vk_FAtYa/exec";
+    const urlWebapp = "https://script.google.com/macros/s/AKfycbyuAxrqWFMq-2q4tBWAshIgUTBEKvHFaX1TS8-xMTRen-CRS01jtuscFT81Vk_FATya/exec";
 
     fetch(urlWebapp, {
         method: "POST",
         body: JSON.stringify({ idMembre: idMembre }),
         headers: {
-            "Content-Type": "text/plain;charset=utf-8" // Évite les blocages CORS avec Google Apps Script
+            "Content-Type": "text/plain;charset=utf-8"
         }
     })
     .then(response => response.text())
     .then(messageDuServeur => {
-        // Affiche le message (Succès ou Alerte doublon) à l'écran de l'application de scan
-        alert(messageDuServeur); 
-        
-        // Ou si tu as un élément HTML dédié pour afficher le message :
-        // document.getElementById("zone-message").innerText = messageDuServeur;
+        alert(messageDuServeur);
     })
     .catch(erreur => {
         console.error("Erreur:", erreur);
