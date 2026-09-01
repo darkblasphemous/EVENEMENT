@@ -1,29 +1,147 @@
-.then(response => response.text())
-            .then(reponseTexte => {
-                const zoneResultat = document.getElementById("resultat");
-                try {
-                    // Analyse le JSON renvoyé par le script Google
-                    const data = JSON.parse(reponseTexte);
-                    
-                    if (data.status === "success") {
-                        zoneResultat.innerText = "SUCCES : Pointage enregistré pour " + data.prenom + " " + data.nom;
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASTER - Système de Pointage</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px 0;
+            width: 80%;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #resultat {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .photo-membre {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Système de Pointage ASTER</h2>
+        
+        <!-- Fenêtre de la caméra -->
+        <div id="reader"></div>
+        
+        <p>Ou entrez l'ID manuellement :</p>
+        <input type="text" id="idMembreInput" placeholder="Ex: MEMBRE-001">
+        <br>
+        <button onclick="validerScanManuel()">Valider le pointage</button>
+        
+        <div id="resultat"></div>
+        <div id="detailsMembre"></div>
+    </div>
+
+    <script>
+        // URL fournie (Attention : s'assure qu'il s'agit bien d'une URL de Web App /exec et non d'une URL de bibliothèque)
+        const urlWebapp = "https://script.google.com/macros/library/d/1H7ftxg6ort7UJiwx176Ve8VHT6RjzXnXE3JnIfzO1-oUTpObn4nWekB9/1";
+        let scanEnCours = false;
+
+        function envoyerScan(idMembre) {
+            if (!idMembre || scanEnCours) return;
+            scanEnCours = true;
+
+            const urlAppel = urlWebapp + "?code=" + encodeURIComponent(idMembre.trim()) + "&action=entree";
+            const zoneResultat = document.getElementById("resultat");
+            const zoneDetails = document.getElementById("detailsMembre");
+            
+            zoneResultat.innerText = "Vérification en cours...";
+            zoneResultat.style.color = "orange";
+            zoneDetails.innerHTML = "";
+
+            fetch(urlAppel)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "ok") {
+                        zoneResultat.innerText = "SUCCÈS : " + data.name + " enregistré !";
                         zoneResultat.style.color = "green";
-                    } else if (data.status === "warning") {
-                        zoneResultat.innerText = "ATTENTION : " + data.prenom + " " + data.nom + " a déjà pointé aujourd'hui !";
+                    } else if (data.status === "error") {
+                        zoneResultat.innerText = data.error; 
                         zoneResultat.style.color = "orange";
                     } else {
-                        zoneResultat.innerText = "ERREUR : " + (data.message || "Inconnue");
+                        zoneResultat.innerText = "ERREUR : " + (data.error || "Inconnue");
                         zoneResultat.style.color = "red";
                     }
-                } catch (e) {
-                    // Si la réponse n'est pas du JSON, affiche-la directement
-                    zoneResultat.innerText = reponseTexte;
-                    zoneResultat.style.color = "red";
-                }
 
-                // Réinitialise le champ input et réactive le scan après 3 secondes
-                document.getElementById("idMembreInput").value = "";
-                setTimeout(() => {
+                    // Affichage de la photo si elle existe dans les données
+                    if (data.photo) {
+                        zoneDetails.innerHTML = `<img src="${data.photo}" class="photo-membre" alt="Photo membre">`;
+                    }
+
+                    document.getElementById("idMembreInput").value = "";
+                    setTimeout(() => {
+                        scanEnCours = false;
+                    }, 3000);
+                })
+                .catch(erreur => {
+                    console.error("Erreur:", erreur);
+                    zoneResultat.innerText = "Erreur de communication avec le serveur.";
+                    zoneResultat.style.color = "red";
                     scanEnCours = false;
-                }, 3000);
-            })
+                });
+        }
+
+        function validerScanManuel() {
+            const idMembre = document.getElementById("idMembreInput").value;
+            envoyerScan(idMembre);
+        }
+
+        document.getElementById("idMembreInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                validerScanManuel();
+            }
+        });
+
+        function onScanSuccess(decodedText) {
+            if (!scanEnCours) {
+                envoyerScan(decodedText);
+            }
+        }
+
+        const html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: 250 }, false);
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+
+</body>
+</html>
