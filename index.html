@@ -1,4 +1,9 @@
 function envoyerScan(idMembre) {
+    if (!idMembre) {
+        alert("Veuillez entrer un ID valide.");
+        return;
+    }
+
     const urlWebapp = "https://script.google.com/macros/s/AKfycbyuAxrqWFMq-2q4tBWAshIgUTBEKvHFaX1TS8-xMTRen-CRS01jtuscFT81Vk_FATya/exec";
 
     fetch(urlWebapp, {
@@ -10,6 +15,7 @@ function envoyerScan(idMembre) {
     })
     .then(response => response.text())
     .then(messageDuServeur => {
+        // Affiche la réponse du serveur (Succès ou Alerte doublon)
         alert(messageDuServeur);
     })
     .catch(erreur => {
