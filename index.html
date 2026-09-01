@@ -1,136 +1,29 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASTER - Scan de Pointage par Caméra</title>
-    <!-- Importation de la bibliothèque de lecture QR Code -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 20px;
-            background-color: #f4f4f9;
-        }
-        .container {
-            max-width: 500px;
-            margin: auto;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        #reader {
-            width: 100%;
-            max-width: 400px;
-            margin: auto;
-        }
-        input, button {
-            padding: 10px;
-            font-size: 16px;
-            margin: 10px 0;
-            width: 80%;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #resultat {
-            margin-top: 20px;
-            font-weight: bold;
-            font-size: 18px;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <h2>Système de Pointage ASTER</h2>
-        
-        <!-- Zone d'affichage de la caméra -->
-        <div id="reader"></div>
-        
-        <p>Ou entrez l'ID manuellement :</p>
-        <input type="text" id="idMembreInput" placeholder="Ex: MEMBRE-0031">
-        <br>
-        <button onclick="validerScanManuel()">Valider le pointage</button>
-        
-        <div id="resultat"></div>
-    </div>
-
-    <script>
-        const urlWebapp = "https://script.google.com/macros/s/AKfycbyuAxrqWFMq-2q4tBWAshIgUTBEKvHFaXlTS8-xMTRen-CRS0ljtuscFT81Vk_FAtYa/exec";
-        let scanEnCours = false;
-
-        function envoyerScan(idMembre) {
-            if (!idMembre || scanEnCours) return;
-            scanEnCours = true;
-
-            const zoneResultat = document.getElementById("resultat");
-            zoneResultat.innerText = "Validation de " + idMembre + "...";
-            zoneResultat.style.color = "orange";
-
-            fetch(urlWebapp, {
-                method: "POST",
-                body: JSON.stringify({ idMembre: idMembre.trim() }),
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                }
-            })
-            .then(response => response.text())
-            .then(messageDuServeur => {
-                zoneResultat.innerText = messageDuServeur;
-                
-                if (messageDuServeur.includes("SUCCES")) {
-                    zoneResultat.style.color = "green";
-                } else {
+.then(response => response.text())
+            .then(reponseTexte => {
+                const zoneResultat = document.getElementById("resultat");
+                try {
+                    // Analyse le JSON renvoyé par le script Google
+                    const data = JSON.parse(reponseTexte);
+                    
+                    if (data.status === "success") {
+                        zoneResultat.innerText = "SUCCES : Pointage enregistré pour " + data.prenom + " " + data.nom;
+                        zoneResultat.style.color = "green";
+                    } else if (data.status === "warning") {
+                        zoneResultat.innerText = "ATTENTION : " + data.prenom + " " + data.nom + " a déjà pointé aujourd'hui !";
+                        zoneResultat.style.color = "orange";
+                    } else {
+                        zoneResultat.innerText = "ERREUR : " + (data.message || "Inconnue");
+                        zoneResultat.style.color = "red";
+                    }
+                } catch (e) {
+                    // Si la réponse n'est pas du JSON, affiche-la directement
+                    zoneResultat.innerText = reponseTexte;
                     zoneResultat.style.color = "red";
                 }
 
+                // Réinitialise le champ input et réactive le scan après 3 secondes
                 document.getElementById("idMembreInput").value = "";
-                
-                // Réactive le scan après 3 secondes pour éviter les lectures en double en rafale
                 setTimeout(() => {
                     scanEnCours = false;
                 }, 3000);
             })
-            .catch(erreur => {
-                console.error("Erreur:", erreur);
-                zoneResultat.innerText = "Erreur de communication avec le serveur.";
-                zoneResultat.style.color = "red";
-                scanEnCours = false;
-            });
-        }
-
-        function validerScanManuel() {
-            const idMembre = document.getElementById("idMembreInput").value;
-            envoyerScan(idMembre);
-        }
-
-        document.getElementById("idMembreInput").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                validerScanManuel();
-            }
-        });
-
-        // Démarrage automatique de la caméra arrière du smartphone (ou webcam PC)
-        function onScanSuccess(decodedText, decodedResult) {
-            if (!scanEnCours) {
-                envoyerScan(decodedText);
-            }
-        }
-
-        const html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: 250 }, false);
-        html5QrcodeScanner.render(onScanSuccess);
-    </script>
-
-</body>
-</html>
