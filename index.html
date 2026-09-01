@@ -73,8 +73,8 @@
     </div>
 
     <script>
-        // URL fournie (Attention : s'assure qu'il s'agit bien d'une URL de Web App /exec et non d'une URL de bibliothèque)
-        const urlWebapp = "https://script.google.com/macros/s/AKfycbyuAxrqWFMq-2q4tBWAshIgUTBEKvHFaXlTS8-xMTRen-CRS0ljtuscFT81Vk_FAtYa/exec";
+        // Remplace par ton URL de Web App Apps Script (qui se termine par /exec)
+        const urlWebapp = "MET_ICI_TON_URL_APPS_SCRIPT_EN_EXEC";
         let scanEnCours = false;
 
         function envoyerScan(idMembre) {
@@ -103,7 +103,6 @@
                         zoneResultat.style.color = "red";
                     }
 
-                    // Affichage de la photo si elle existe dans les données
                     if (data.photo) {
                         zoneDetails.innerHTML = `<img src="${data.photo}" class="photo-membre" alt="Photo membre">`;
                     }
