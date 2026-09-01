@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASTER - Scan de Pointage</title>
+    <title>ASTER - Scan de Pointage par Caméra</title>
+    <!-- Importation de la bibliothèque de lecture QR Code -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            margin-top: 50px;
+            margin-top: 20px;
             background-color: #f4f4f9;
         }
         .container {
@@ -18,6 +20,11 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
         }
         input, button {
             padding: 10px;
@@ -46,9 +53,12 @@
 
     <div class="container">
         <h2>Système de Pointage ASTER</h2>
-        <p>Scannez ou entrez l'ID du membre :</p>
         
-        <input type="text" id="idMembreInput" placeholder="Ex: MEMBRE-0031" autofocus>
+        <!-- Zone d'affichage de la caméra -->
+        <div id="reader"></div>
+        
+        <p>Ou entrez l'ID manuellement :</p>
+        <input type="text" id="idMembreInput" placeholder="Ex: MEMBRE-0031">
         <br>
         <button onclick="validerScanManuel()">Valider le pointage</button>
         
@@ -56,22 +66,20 @@
     </div>
 
     <script>
-        // URL de ton application web Google Apps Script
         const urlWebapp = "https://script.google.com/macros/s/AKfycbyuAxrqWFMq-2q4tBWAshIgUTBEKvHFaX1TS8-xMTRen-CRS01jtuscFT81Vk_FATya/exec";
+        let scanEnCours = false;
 
         function envoyerScan(idMembre) {
-            if (!idMembre) {
-                alert("Veuillez entrer un ID valide.");
-                return;
-            }
+            if (!idMembre || scanEnCours) return;
+            scanEnCours = true;
 
             const zoneResultat = document.getElementById("resultat");
-            zoneResultat.innerText = "Validation en cours...";
+            zoneResultat.innerText = "Validation de " + idMembre + "...";
             zoneResultat.style.color = "orange";
 
             fetch(urlWebapp, {
                 method: "POST",
-                body: JSON.stringify({ idMembre: idMembre }),
+                body: JSON.stringify({ idMembre: idMembre.trim() }),
                 headers: {
                     "Content-Type": "text/plain;charset=utf-8"
                 }
@@ -86,28 +94,42 @@
                     zoneResultat.style.color = "red";
                 }
 
-                // Réinitialise le champ input pour le prochain scan
                 document.getElementById("idMembreInput").value = "";
-                document.getElementById("idMembreInput").focus();
+                
+                // Réactive le scan après 3 secondes pour éviter les lectures en double en rafale
+                setTimeout(() => {
+                    scanEnCours = false;
+                }, 3000);
             })
             .catch(erreur => {
                 console.error("Erreur:", erreur);
                 zoneResultat.innerText = "Erreur de communication avec le serveur.";
                 zoneResultat.style.color = "red";
+                scanEnCours = false;
             });
         }
 
         function validerScanManuel() {
-            const idMembre = document.getElementById("idMembreInput").value.trim();
+            const idMembre = document.getElementById("idMembreInput").value;
             envoyerScan(idMembre);
         }
 
-        // Permet de valider directement en appuyant sur la touche "Entrée"
         document.getElementById("idMembreInput").addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
                 validerScanManuel();
             }
         });
+
+        // Démarrage automatique de la caméra arrière du smartphone (ou webcam PC)
+        function onScanSuccess(decodedText, decodedResult) {
+            if (!scanEnCours) {
+                envoyerScan(decodedText);
+            }
+        }
+
+        const html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: 250 }, false);
+        html5QrcodeScanner.render(onScanSuccess);
     </script>
 
 </body>
