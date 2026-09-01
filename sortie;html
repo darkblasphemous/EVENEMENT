@@ -121,7 +121,7 @@
 
     <script>
         let html5QrCode;
-        const scriptUrl = "https://script.google.com/macros/s/AKfycbxr2945zVbehDI2yAH2YgSsHA2BOCM8r3whjyL2zFYuMOrJjhIm7e_9NWNkc0QARwQ/exec";
+        const scriptUrl = "https://script.google.com/macros/s/AKfycbwx4xmDV1JoTzhw0YyHAO99vdrMwzZw3q1pbwKhurwdkYG52yXLk49mkvzQEK0HvucJ/exec";
 
         function verifierID(memberId) {
             document.getElementById('scanner-container').style.display = 'none';
